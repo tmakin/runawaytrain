@@ -1,0 +1,16 @@
+[Unit]
+Description=Tunnel DMX Chase Controller
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/uv run --no-sync python chase.py
+WorkingDirectory=/home/pi/runawaytrain
+Restart=always
+RestartSec=5
+User=root
+Environment=UV_PROJECT_ENVIRONMENT=/home/pi/runawaytrain/.venv
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

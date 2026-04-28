@@ -1,0 +1,9 @@
+[project]
+name = "tunnel-dmx"
+version = "0.1.0"
+description = "Tunnel DMX chase controller"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=2.0",
+    "pyserial>=3.5",
+]

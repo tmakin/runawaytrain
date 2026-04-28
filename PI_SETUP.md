@@ -10,7 +10,7 @@ Tunnel DMX Chase Controller to it.
 1. Download Raspberry Pi Imager: https://www.raspberrypi.com/software/
 2. Choose:
    - Device: Raspberry Pi 4
-   - OS: Raspberry Pi OS Lite (64-bit)
+   - OS: Raspberry Pi OS Lite (64-bit, Trixie)
    - Storage: your microSD card
 3. Click the gear icon (advanced options) and set:
    - Hostname: `tunneldmx`
@@ -56,7 +56,7 @@ the service restart, which is useful before the systemd unit is installed.
 On the Pi, edit the password variable before running the installer:
 
 ```sh
-cd /home/pi/repos/runawaytrain
+cd /home/pi/runawaytrain
 nano install.sh
 # Change HOTSPOT_PASS="..." to your chosen password (min 8 chars)
 ```
@@ -64,7 +64,7 @@ nano install.sh
 ## 5. Run the installer
 
 ```sh
-sudo bash /home/pi/repos/runawaytrain/install.sh
+sudo bash /home/pi/runawaytrain/install.sh
 ```
 
 The script will install dependencies, configure the hotspot, and enable the
@@ -105,13 +105,13 @@ That syncs the allowlisted files and restarts `tunnel-dmx`. Override the
 default target with env vars if needed:
 
 ```sh
-PI_HOST=pi@192.168.50.1 PI_PATH=/home/pi/repos/runawaytrain ./sync.sh
+PI_HOST=pi@192.168.50.1 PI_PATH=/home/pi/runawaytrain ./sync.sh
 ```
 
 Or on the Pi via git:
 
 ```sh
-cd /home/pi/repos/runawaytrain
+cd /home/pi/runawaytrain
 git pull
 sudo systemctl restart tunnel-dmx
 ```
@@ -132,16 +132,28 @@ ls -l /dev/ttyUSB0
 dmesg | grep -i ftdi
 
 # Confirm hotspot is up
-sudo systemctl status hostapd dnsmasq
+nmcli connection show TunnelDMX
+nmcli device status
+sudo systemctl status dnsmasq
 iw dev wlan0 info
+
+# Re-provision Python deps (rare)
+cd /home/pi/runawaytrain
+sudo -u pi uv sync
+sudo systemctl restart tunnel-dmx
 ```
 
 ## 10. Troubleshooting
 
 - **`/dev/ttyUSB0` missing**: unplug/replug the Enttec adapter, check `dmesg`.
   The service runs in demo mode (no DMX output) if the port is missing.
-- **Hotspot not appearing**: `sudo systemctl status hostapd`. Common cause is
-  WiFi country not set; run `sudo raspi-config` -> Localisation -> WLAN Country.
+- **Hotspot not appearing**: `nmcli connection show TunnelDMX --active` —
+  if missing, `sudo nmcli connection up TunnelDMX`. Common cause is WiFi
+  country not set; run `sudo raspi-config` -> Localisation -> WLAN Country.
+- **dnsmasq fails to start**: it must bind to `wlan0` after NetworkManager
+  brings up the static IP. Check `sudo systemctl status dnsmasq`. The install
+  script adds an `After=NetworkManager-wait-online.service` override; if you
+  edited it, make sure that ordering is preserved.
 - **Web UI unreachable**: confirm phone is on `TunnelDMX` SSID, then
   `ping 192.168.50.1`. If that works but the page does not load,
   `sudo systemctl status tunnel-dmx`.

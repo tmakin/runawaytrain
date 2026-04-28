@@ -34,11 +34,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Add new files/dirs here as the project grows.
 INCLUDES=(
     chase.py
+    pyproject.toml
     requirements.txt
     tunnel-dmx.service
     install.sh
     templates
     static
+    README.md
 )
 
 echo "==> Syncing to $PI_HOST:$PI_PATH"

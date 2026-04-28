@@ -33,17 +33,22 @@ with no human intervention.
 ## Project structure
 
 ```
-repos/runawaytrain/
+runawaytrain/
 ├── chase.py                  # Main application
 ├── templates/
 │   └── index.html            # Web UI (Jinja2 template)
 ├── static/                   # Empty, reserved for future assets
 ├── tunnel-dmx.service        # systemd unit file
 ├── install.sh                # One-shot Pi setup script
-├── requirements.txt          # Python dependencies
+├── pyproject.toml            # uv project definition + dependencies
+├── requirements.txt          # Mirror of deps for reference
+├── sync.sh                   # Laptop -> Pi rsync helper
+├── PI_SETUP.md               # Pi setup and deployment guide
 ├── state.json                # Auto-created at runtime, do not commit
 └── README.md                 # Setup and usage documentation
 ```
+
+Deployed location on the Pi: `/home/pi/runawaytrain/`.
 
 ---
 
@@ -210,17 +215,22 @@ Description=Tunnel DMX Chase Controller
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/python3 /home/pi/repos/runawaytrain/chase.py
-WorkingDirectory=/home/pi/repos/runawaytrain
+ExecStart=/usr/local/bin/uv run --no-sync python chase.py
+WorkingDirectory=/home/pi/runawaytrain
 Restart=always
 RestartSec=5
 User=root
+Environment=UV_PROJECT_ENVIRONMENT=/home/pi/runawaytrain/.venv
 StandardOutput=journal
 StandardError=journal
 
 [Install]
 WantedBy=multi-user.target
 ```
+
+Python is managed by `uv` rather than system pip. The systemd unit invokes
+`uv run --no-sync` so it does not re-resolve dependencies on every restart;
+`UV_PROJECT_ENVIRONMENT` pins the venv path so it works under `User=root`.
 
 ---
 
@@ -229,45 +239,67 @@ WantedBy=multi-user.target
 One-shot script, run once as root on a fresh Raspberry Pi OS Lite install.
 
 Steps it must perform:
-1. `apt-get install` — `python3-pip python3-serial hostapd dnsmasq avahi-daemon`
-2. `pip3 install flask pyserial` (with `--break-system-packages` if needed)
-3. Configure `/etc/hostapd/hostapd.conf`:
+1. `apt-get install` — `hostapd dnsmasq avahi-daemon curl ca-certificates`
+2. Install `uv` to `/usr/local/bin` (via the official installer script) if
+   not already present.
+3. Run `uv sync` as the `pi` user inside the project directory to provision
+   `.venv` from `pyproject.toml`.
+4. Configure `/etc/hostapd/hostapd.conf`:
    - SSID: `TunnelDMX`
    - WPA2 password: defined as variable at top of script (`HOTSPOT_PASS`)
    - Channel 6, 2.4GHz
-4. Configure `/etc/dnsmasq.conf`:
-   - DHCP range: `192.168.50.10` – `192.168.50.50`
-   - DNS alias: `dmx.local` → `192.168.50.1`
-5. Configure static IP `192.168.50.1/24` on `wlan0` via `/etc/dhcpcd.conf`
-6. Copy `tunnel-dmx.service` to `/etc/systemd/system/`
-7. `systemctl enable` for `hostapd`, `dnsmasq`, `tunnel-dmx`
-8. Print summary: WiFi name, password, URL to connect to
+5. Configure `/etc/dnsmasq.conf`:
+   - DHCP range: `192.168.50.10` to `192.168.50.50`
+   - DNS alias: `dmx.local` -> `192.168.50.1`
+6. Configure static IP `192.168.50.1/24` on `wlan0` via `/etc/dhcpcd.conf`
+7. Copy `tunnel-dmx.service` to `/etc/systemd/system/`
+8. `systemctl enable` for `hostapd`, `dnsmasq`, `tunnel-dmx`
+9. Print summary: WiFi name, password, URL to connect to
 
-The password variable must be clearly marked at the top of the script
-with a comment telling the operator to change it before running.
-
----
-
-## requirements.txt
-
-```
-flask>=2.0
-pyserial>=3.5
-```
+The password variable is clearly marked at the top of the script. Operator
+must check (and change if needed) before running.
 
 ---
 
-## README.md — must cover
+## pyproject.toml
+
+```toml
+[project]
+name = "tunnel-dmx"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "flask>=2.0",
+    "pyserial>=3.5",
+]
+```
+
+A `requirements.txt` mirroring these deps is kept alongside for reference,
+but uv is the source of truth for environment provisioning.
+
+---
+
+## README.md and PI_SETUP.md
+
+`README.md` is the project overview and covers:
 
 - Hardware wiring diagram (ASCII)
-- First-time setup steps (flash OS → enable SSH → scp → install.sh → reboot)
-- How to connect (WiFi name, URL)
-- How to check logs: `sudo journalctl -u tunnel-dmx -f`
-- How to restart the service
-- How to change default settings (config block in chase.py)
 - DMX channel map for RGBW fixtures
+- How to connect (WiFi name, URL)
+- How to check logs / restart the service
+- How to change default settings (config block in chase.py)
+- Pointer to `PI_SETUP.md` for setup details
 - Note on the 120m cable run: keep DMX data cable physically separated
   from mains by at least 50mm, use 120Ω terminator on last fixture
+
+`PI_SETUP.md` is the operator-facing setup and deployment guide and covers:
+
+- Flashing Raspberry Pi OS Lite via Raspberry Pi Imager
+- First boot, SSH, system update
+- First-time deploy via `./sync.sh --no-restart`
+- Editing `HOTSPOT_PASS` and running `install.sh`
+- Verification, post-deployment SSH, code updates via `./sync.sh`
+- Troubleshooting and pre-venue checklist
 
 ---
 
