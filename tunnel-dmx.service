@@ -1,13 +1,19 @@
 [Unit]
 Description=Tunnel DMX Chase Controller
-After=network.target
+After=network.target olad.service
+Wants=olad.service
 
 [Service]
-ExecStart=/usr/local/bin/uv run --no-sync python chase.py
+ExecStart=/usr/local/bin/uv run --no-sync tunnel-dmx
 WorkingDirectory=/home/pi/runawaytrain
 Restart=always
 RestartSec=5
-User=root
+User=pi
+Group=pi
+# Allow binding to port 80 without running as root.
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE
+NoNewPrivileges=yes
 Environment=UV_PROJECT_ENVIRONMENT=/home/pi/runawaytrain/.venv
 StandardOutput=journal
 StandardError=journal

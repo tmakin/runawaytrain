@@ -1,0 +1,41 @@
+body { padding: 12px; max-width: 720px; margin: 0 auto; line-height: 1.5; }
+header { padding: 8px 4px 12px; margin-bottom: 16px; }
+header a {
+  color: var(--text); text-decoration: none; font-size: 12px;
+  border: 1px solid var(--border); padding: 6px 10px; border-radius: 4px;
+}
+.doc h1, .doc h2, .doc h3 { color: var(--fg); margin-top: 1.6em; }
+.doc h1 { font-size: 18px; }
+.doc h2 { font-size: 16px; }
+.doc h3 { font-size: 14px; }
+.doc h1:first-child { margin-top: 0; }
+.doc p, .doc li { color: var(--text); }
+.doc strong { color: #fff; }
+.doc a { color: var(--fg); }
+.doc hr { border: 0; border-top: 1px solid var(--border); margin: 24px 0; }
+.doc code {
+  background: #141414; color: var(--fg);
+  padding: 1px 5px; border-radius: 3px;
+  font-size: 13px;
+}
+.doc pre {
+  background: var(--panel); border: 1px solid var(--border); border-radius: 4px;
+  padding: 10px; overflow-x: auto;
+}
+.doc pre code { background: transparent; padding: 0; color: var(--text); }
+.doc table {
+  border-collapse: collapse; width: 100%;
+  margin: 10px 0;
+  font-size: 13px;
+  display: block; overflow-x: auto;
+}
+.doc th, .doc td {
+  border: 1px solid var(--border); padding: 6px 8px;
+  text-align: left; vertical-align: top;
+}
+.doc th { background: var(--panel); color: var(--fg); }
+.doc blockquote {
+  border-left: 3px solid var(--fg);
+  margin: 10px 0; padding: 4px 12px;
+  color: var(--muted);
+}

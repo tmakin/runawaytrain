@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>TUNNEL DMX</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header>
+  <h1>TUNNEL DMX</h1>
+  <div class="status">
+    <span id="link" class="link" title="server link"></span>
+    <span id="dmx" class="dmx" title="DMX output state">DMX ?</span>
+    <span id="play" class="play" title="show state">■</span>
+    <span id="dot-label">stopped</span>
+    <a class="help" href="/help" title="Help">?</a>
+  </div>
+</header>
+
+<div class="panel">
+  <div class="grid" id="grid">
+    {% for i in range(max_fixtures) %}<div class="par" data-i="{{ i }}"></div>{% endfor %}
+  </div>
+</div>
+
+<div class="panel">
+  <div class="patterns" id="patterns">
+    {% for p in patterns %}<button data-pattern="{{ p }}">{{ p }}</button>{% endfor %}
+  </div>
+</div>
+
+<div class="panel">
+  <div class="slider-row"><label>BPM</label>
+    <input type="range" id="bpm" min="10" max="400" step="1">
+    <span class="val" id="bpm-v"></span>
+  </div>
+  <div class="slider-row"><label>Fixtures</label>
+    <input type="range" id="fixtures" min="1" max="{{ max_fixtures }}" step="1">
+    <span class="val" id="fixtures-v"></span>
+  </div>
+  <div class="slider-row"><label>Dimmer</label>
+    <input type="range" id="dimmer" min="0" max="255" step="1">
+    <span class="val" id="dimmer-v"></span>
+  </div>
+</div>
+
+<div class="panel colors">
+  <div class="slider-row"><label>Cycle</label>
+    <input type="range" id="cycle_speed" min="0" max="60" step="1">
+    <span class="val" id="cycle_speed-v"></span>
+  </div>
+  <div class="slider-row"><label>Hue Start</label>
+    <input type="range" id="hue_start" min="0" max="100" step="1">
+    <span class="val" id="hue_start-v"></span>
+  </div>
+  <div class="slider-row"><label>Hue Width</label>
+    <input type="range" id="hue_width" min="0" max="100" step="1">
+    <span class="val" id="hue_width-v"></span>
+  </div>
+  <div class="slider-row r"><label>R</label>
+    <input type="range" id="cR" min="0" max="255" step="1">
+    <span class="val" id="cR-v"></span>
+  </div>
+  <div class="slider-row g"><label>G</label>
+    <input type="range" id="cG" min="0" max="255" step="1">
+    <span class="val" id="cG-v"></span>
+  </div>
+  <div class="slider-row b"><label>B</label>
+    <input type="range" id="cB" min="0" max="255" step="1">
+    <span class="val" id="cB-v"></span>
+  </div>
+  <div class="slider-row w"><label>W</label>
+    <input type="range" id="cW" min="0" max="255" step="1">
+    <span class="val" id="cW-v"></span>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="transport">
+    <button class="run-b" id="b-run">Run</button>
+    <button id="b-step">Step</button>
+    <button id="b-stop">Stop</button>
+    <button class="bo-b" id="b-bo">Black</button>
+  </div>
+  <div class="meta" id="meta">step 0 / 0</div>
+</div>
+
+<script>window.MAX_FIX = {{ max_fixtures }};</script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+
+</body>
+</html>

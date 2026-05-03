@@ -44,10 +44,10 @@ From your laptop (in the project directory), use the bundled sync script:
 
 ```sh
 # First-time deploy over your home WiFi
-PI_HOST=pi@tunneldmx.local ./sync.sh --no-restart
+PI_HOST=pi@tunneldmx.local ./scripts/sync.sh --no-restart
 ```
 
-`sync.sh` uses an explicit allowlist (see the `INCLUDES` array at the top of
+`scripts/sync.sh` uses an explicit allowlist (see the `INCLUDES` array at the top of
 the script); add new files there as the project grows. `--no-restart` skips
 the service restart, which is useful before the systemd unit is installed.
 
@@ -57,14 +57,14 @@ On the Pi, edit the password variable before running the installer:
 
 ```sh
 cd /home/pi/runawaytrain
-nano install.sh
+nano scripts/install.sh
 # Change HOTSPOT_PASS="..." to your chosen password (min 8 chars)
 ```
 
 ## 5. Run the installer
 
 ```sh
-sudo bash /home/pi/runawaytrain/install.sh
+sudo bash /home/pi/runawaytrain/scripts/install.sh
 ```
 
 The script will install dependencies, configure the hotspot, and enable the
@@ -76,6 +76,21 @@ Reboot to bring up the hotspot:
 ```sh
 sudo reboot
 ```
+
+## 5b. Patch DMX (only if adapter wasn't plugged in during install)
+
+If the Enttec Open DMX adapter was plugged in when `scripts/install.sh` ran, the
+DMX universe is already patched and you can skip this step.
+
+If you plugged in afterwards, run once on the Pi:
+
+```sh
+ola_dev_info                          # note the device id of the FTDI / Open DMX entry
+sudo ola_patch -d <ID> -p 0 -u 0      # patch port 0 of that device to universe 0
+sudo systemctl restart tunnel-dmx
+```
+
+The patch persists across reboots.
 
 ## 6. Verify
 
@@ -93,19 +108,58 @@ The Pi is now a hotspot, so SSH from your laptop by joining `TunnelDMX` first:
 ssh pi@192.168.50.1
 ```
 
+### Passwordless deploy (recommended)
+
+`scripts/sync.sh` opens an SSH session and runs `sudo systemctl restart tunnel-dmx`.
+By default that prompts twice (SSH password, then sudo password) on every
+deploy. Two one-time setup steps eliminate both prompts.
+
+**1. SSH key auth.** From your laptop:
+
+```sh
+ssh-keygen -t ed25519 -f ~/.ssh/tunnel_dmx -N ""    # skip if you already have a key
+ssh-copy-id -i ~/.ssh/tunnel_dmx.pub pi@192.168.50.1
+```
+
+Optionally add a host alias to `~/.ssh/config`:
+
+```
+Host tunneldmx
+    HostName 192.168.50.1
+    User pi
+    IdentityFile ~/.ssh/tunnel_dmx
+```
+
+**2. NOPASSWD sudo for the two systemctl commands `scripts/sync.sh` invokes.** On
+the Pi:
+
+```sh
+sudo tee /etc/sudoers.d/tunnel-dmx-deploy >/dev/null <<'EOF'
+pi ALL=(root) NOPASSWD: /bin/systemctl restart tunnel-dmx, /bin/systemctl is-active tunnel-dmx
+EOF
+sudo chmod 440 /etc/sudoers.d/tunnel-dmx-deploy
+```
+
+This grants the `pi` user the right to run *only* those two commands without
+a password. Anything else still requires sudo as normal.
+
+`scripts/sync.sh` uses `sudo -n` (non-interactive) for these calls, so if the
+sudoers rule is missing it will fail loudly rather than hang waiting for a
+password prompt that the script can't see.
+
 ## 8. Updating code on a deployed Pi
 
 Join the `TunnelDMX` WiFi, then from your laptop:
 
 ```sh
-./sync.sh
+./scripts/sync.sh
 ```
 
 That syncs the allowlisted files and restarts `tunnel-dmx`. Override the
 default target with env vars if needed:
 
 ```sh
-PI_HOST=pi@192.168.50.1 PI_PATH=/home/pi/runawaytrain ./sync.sh
+PI_HOST=pi@192.168.50.1 PI_PATH=/home/pi/runawaytrain ./scripts/sync.sh
 ```
 
 Or on the Pi via git:
@@ -159,8 +213,10 @@ sudo systemctl restart tunnel-dmx
   `sudo systemctl status tunnel-dmx`.
 - **Lights show "no signal"**: the DMX thread may not be running. Check logs.
   Frames must be sent continuously, even when the chase is stopped.
-- **Chase did not auto-start after power cut**: this is intentional. By design
-  `running` is always `False` on boot for safety. Press Run in the UI.
+- **Chase auto-started after power cut**: this is intentional. `running`
+  defaults to `True` on boot so the tunnel comes back up after a generator
+  cycle without operator intervention. Press Stop in the UI if you do not
+  want it running.
 
 ## 11. Pre-venue checklist
 

@@ -31,17 +31,17 @@ separated from mains by at least 50mm. 120Ω terminator on the last fixture.
 
 ## First-time setup
 
-See [PI_SETUP.md](PI_SETUP.md). Summary:
+See [docs/PI_SETUP.md](docs/PI_SETUP.md). Summary:
 
 1. Flash Raspberry Pi OS Lite, enable SSH, set hostname `tunneldmx`.
-2. From your laptop: `PI_HOST=pi@tunneldmx.local ./sync.sh --no-restart`
-3. SSH in, edit `HOTSPOT_PASS` in `install.sh`, run `sudo bash install.sh`.
+2. From your laptop: `PI_HOST=pi@tunneldmx.local ./scripts/sync.sh --no-restart`
+3. SSH in, edit `HOTSPOT_PASS` in `scripts/install.sh`, run `sudo bash scripts/install.sh`.
 4. Reboot. Join WiFi `TunnelDMX`, browse to `http://dmx.local`.
 
 ## How to connect
 
 - WiFi SSID: `TunnelDMX`
-- Password: set in `install.sh` (`HOTSPOT_PASS`)
+- Password: set in `scripts/install.sh` (`HOTSPOT_PASS`)
 - URL: `http://dmx.local` or `http://192.168.50.1`
 
 ## Operations
@@ -60,10 +60,11 @@ sudo systemctl start tunnel-dmx
 
 ## Changing defaults
 
-Edit the configuration block at the top of [chase.py](chase.py):
+Edit the constants at the top of [src/tunnel_dmx/config.py](src/tunnel_dmx/config.py):
 
 ```python
-DMX_PORT     = "/dev/ttyUSB0"
+OLA_URL      = "http://127.0.0.1:9090/set_dmx"
+OLA_UNIVERSE = 0
 MAX_FIXTURES = 16
 CHANNELS_PER = 4
 STATE_FILE   = "state.json"
@@ -71,17 +72,17 @@ WEB_PORT     = 80
 ```
 
 Default runtime state lives in `DEFAULT_STATE` in the same file. After a
-reboot, persisted settings in `state.json` override these defaults, except
-`running` which is always `False` on boot (safety: lights do not unexpectedly
-start in a tunnel).
+reboot, the keys listed in `PERSISTED_KEYS` are restored from `state.json`
+on top of those defaults. `running` and `blackout` are not persisted: on
+startup the controller comes up `running=True` and `blackout=False`.
 
 ## Updating code on a deployed Pi
 
 Join `TunnelDMX`, then from your laptop:
 
 ```sh
-./sync.sh
+./scripts/sync.sh
 ```
 
-This rsyncs the allowlisted files (see `INCLUDES` in [sync.sh](sync.sh)) and
-restarts the service.
+This rsyncs the allowlisted files (see `INCLUDES` in [scripts/sync.sh](scripts/sync.sh))
+and restarts the service.

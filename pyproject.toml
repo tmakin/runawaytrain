@@ -5,5 +5,13 @@ description = "Tunnel DMX chase controller"
 requires-python = ">=3.11"
 dependencies = [
     "flask>=2.0",
-    "pyserial>=3.5",
+    "markdown>=3.5",
+    "waitress>=3.0",
 ]
+
+[project.scripts]
+tunnel-dmx = "tunnel_dmx.chase:main"
+
+[build-system]
+requires = ["uv_build>=0.5,<0.9"]
+build-backend = "uv_build"
