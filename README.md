@@ -44,6 +44,9 @@ See [docs/PI_SETUP.md](docs/PI_SETUP.md). Summary:
 - Password: set in `scripts/install.sh` (`HOTSPOT_PASS`)
 - URL: `http://dmx.local` or `http://192.168.50.1`
 
+## User Interface
+![alt text](docs/screenshot.png)
+
 ## Operations
 
 ```sh
